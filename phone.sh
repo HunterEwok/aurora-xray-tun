@@ -30,8 +30,12 @@ install)
     [ -n "$rpm" ] || die "нет out/*.rpm: сначала ./build.sh 'vless://...'"
     on_phone "mkdir -p $DIR"
     scp $SSH_OPTS "$rpm" out/xray.json out/vless.sh "$PHONE:$DIR/"
-    # Короткие on.sh и off.sh кладутся прямо в домашнюю папку.
+    # Короткие on.sh и off.sh кладутся прямо в домашнюю папку, а в ~/.bashrc
+    # добавляются команды on и off (один раз, блок помечен).
     scp $SSH_OPTS phone/on.sh phone/off.sh "$PHONE:"
+    on_phone "grep -q '# aurora-xray-tun' ~/.bashrc 2>/dev/null || printf '%s\\n' \
+        '# aurora-xray-tun: on / off включают и выключают VLESS' \
+        'alias on=\"sh ~/on.sh\"' 'alias off=\"sh ~/off.sh\"' >> ~/.bashrc"
     echo "ставлю пакет $(basename "$rpm")"
     on_phone "gdbus call --system --dest ru.omp.APM --object-path /ru/omp/APM \
         --method ru.omp.APM.Install \"\$HOME/$DIR/$(basename "$rpm")\" '{}'"
