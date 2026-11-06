@@ -1,10 +1,11 @@
 #!/bin/sh
 # Ставит собранное на телефон по SSH и управляет туннелем.
-#   ./phone.sh install   копирует out/ на телефон, ставит пакет, запускает и проверяет
+#   ./phone.sh install   копирует out/ на телефон, ставит пакет, запускает сторожа
+#                        (пароль root нужен здесь) и проверяет
 #   ./phone.sh start | stop | status | log
 #   ./phone.sh check     показывает, с какого IP телефон выходит в интернет
 # Телефон: PHONE=defaultuser@адрес (по умолчанию defaultuser@192.168.2.15, это USB).
-# Команды root спрашивают пароль devel-su (его задают в режиме разработчика).
+# Пароль devel-su (его задают в режиме разработчика) спрашивает только install.
 set -eu
 cd "$(dirname "$0")"
 PHONE=${PHONE:-defaultuser@192.168.2.15}
@@ -40,10 +41,15 @@ install)
     on_phone "gdbus call --system --dest ru.omp.APM --object-path /ru/omp/APM \
         --method ru.omp.APM.Install \"\$HOME/$DIR/$(basename "$rpm")\" '{}'"
     sleep 5
-    as_root start
+    # Сторож от root: пароль root спрашивается здесь, дальше on и off без пароля.
+    on_phone "touch $DIR/on"
+    as_root watch
+    sleep 8
     check
     ;;
-start|stop|status|log) as_root "$1" ;;
+start) ssh -t $SSH_OPTS "$PHONE" "sh ~/on.sh" ;;
+stop) ssh -t $SSH_OPTS "$PHONE" "sh ~/off.sh" ;;
+status|log) on_phone "sh $DIR/vless.sh $1" ;;
 check) check ;;
 *) echo "запуск: ./phone.sh install|start|stop|status|log|check"; exit 2 ;;
 esac
