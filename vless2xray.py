@@ -31,6 +31,7 @@ def is_ip(host):
 
 
 def parse(link):
+    """Разбирает ссылку: (части URL, порт, параметры после ?)."""
     u = urlsplit(link.strip())
     if u.scheme != "vless":
         fail("это не ссылка vless://")
@@ -45,6 +46,7 @@ def parse(link):
 
 
 def stream_settings(u, q):
+    """streamSettings Xray: транспорт (type=) и шифрование (security=) из ссылки."""
     net = q.get("type", "tcp")
     s = {}
     if net in ("tcp", "raw"):
@@ -106,10 +108,13 @@ def stream_settings(u, q):
 
 
 def config(link, ipv6=False):
+    """Полный конфиг Xray: TUN на входе, VLESS на выходе, DNS и правила маршрутизации."""
     u, port, q = parse(link)
     user = {"id": unquote(u.username), "encryption": q.get("encryption") or "none"}
     if q.get("flow"):
         user["flow"] = q["flow"]
+    # Адрес интерфейса xtun0 и маршруты, которые Xray ставит при запуске: две половины
+    # адресного пространства перекрывают маршрут по умолчанию, не удаляя его.
     gateway = ["172.19.0.1/30"]
     routes = ["0.0.0.0/1", "128.0.0.0/1"]
     if ipv6:
@@ -142,6 +147,8 @@ def config(link, ipv6=False):
         ],
         "routing": {
             "domainStrategy": "AsIs",
+            # Правила по порядку: DNS-запросы приложений в DNS Xray, его собственные запросы
+            # через сервер, локальные сети напрямую, всё остальное через сервер.
             "rules": [
                 {"type": "field", "inboundTag": ["tun"], "port": "53", "outboundTag": "dns-out"},
                 {"type": "field", "inboundTag": ["dns-internal"], "outboundTag": "proxy"},

@@ -4,11 +4,14 @@
 # телефона); дальше on и off работают без пароля.
 D=$HOME/xray-tun
 RUN=/run/aurora-xray-tun
+# Файл on говорит сторожу: туннель должен работать.
 touch "$D/on"
+# Сторож работает от root; если его нет, запускаем (здесь и нужен пароль).
 if ! { [ -f $RUN.watch ] && [ -d "/proc/$(cat $RUN.watch)" ]; }; then
     echo "Сторож не запущен (так бывает после перезагрузки). Пароль root нужен один раз:"
     devel-su sh "$D/vless.sh" watch || exit 1
 fi
+# Ждём до 20 секунд, пока сторож не сообщит, что туннель поднят.
 i=0
 while [ $i -lt 20 ]; do
     [ "$(cat $RUN.state 2>/dev/null)" = on ] && { echo "VLESS включён"; exit 0; }

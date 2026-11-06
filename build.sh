@@ -10,7 +10,7 @@
 #   ARCH=armv7hl|aarch64|all   архитектура телефона (по умолчанию armv7hl)
 #   APP_ID=...                 имя пакета (по умолчанию io.github.hunterewok.XrayTun)
 #   XRAY_VERSION=v...          тег Xray-core
-# Нужен Docker. Тестовые ключи подписи скачиваются сами (см. keys/README.md).
+# Нужен Docker. Тестовые ключи подписи скачиваются сами (см. README, «Ключи подписи»).
 set -eu
 cd "$(dirname "$0")"
 
@@ -44,27 +44,29 @@ for f in regular_key.pem:$KEY_SHA256 regular_cert.pem:$CERT_SHA256; do
     name=${f%%:*} sum=${f#*:}
     [ -f keys/$name ] && continue
     echo "скачиваю keys/$name"
-    curl -fsSL "$KEYS_BASE/$name" -o keys/$name.tmp || die "не удалось скачать $KEYS_BASE/$name (см. keys/README.md)"
+    curl -fsSL "$KEYS_BASE/$name" -o keys/$name.tmp || die "не удалось скачать $KEYS_BASE/$name (см. README, «Ключи подписи»)"
     [ "$(sha256 keys/$name.tmp)" = "$sum" ] || { rm -f keys/$name.tmp; die "у скачанного $name другая контрольная сумма"; }
     mv keys/$name.tmp keys/$name
 done
 
 # 2. Образы: сборка Xray и Aurora Platform SDK. SDK — образ x86_64: на Маке с
 # Apple Silicon Docker запускает его через эмуляцию.
-docker build -q -t $XRAY_IMAGE -f docker/xray.Dockerfile docker >/dev/null
+docker build -q -t $XRAY_IMAGE build >/dev/null
 if ! docker image inspect $PSDK_IMAGE >/dev/null 2>&1; then
     echo "загружаю Aurora Platform SDK $PSDK_VERSION (один раз, около 600 МБ)"
     docker import --platform linux/amd64 "$PSDK_URL" $PSDK_IMAGE >/dev/null
 fi
 
-# 3. Для каждой архитектуры: Xray-core, потом пакет с подписью.
+# 3. Для каждой архитектуры: сначала Xray-core в src/ (build/xray.sh), потом пакет
+# с подписью в out/ (build/package.sh, внутри SDK). chown возвращает файлы вам:
+# в контейнере они создаются от root.
 # -it: свой ключ с паролем подпись спросит в терминале.
 TTY=; [ -t 0 ] && TTY=-it
 for A in $ARCHS; do
     docker run --rm -v "$PWD/cache:/cache" -v "$PWD/src:/src" $XRAY_IMAGE \
         "$XRAY_VERSION" "$A" "/src/$APP_ID"
     docker run --rm $TTY --platform linux/amd64 -v "$PWD:/work" $PSDK_IMAGE /bin/bash -c \
-        "/bin/bash /work/docker/package.sh '$APP_ID' '${XRAY_VERSION#v}' '$A' && chown -R $(id -u):$(id -g) /work/out /work/src"
+        "/bin/bash /work/build/package.sh '$APP_ID' '${XRAY_VERSION#v}' '$A' && chown -R $(id -u):$(id -g) /work/out /work/src"
 done
 
 echo

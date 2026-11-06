@@ -9,5 +9,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN arch=$(dpkg --print-architecture) \
     && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz" | tar -xz -C /usr/local
 ENV PATH=/usr/local/go/bin:$PATH GOTOOLCHAIN=local
-COPY build-xray.sh /usr/local/bin/build-xray.sh
-ENTRYPOINT ["/bin/sh", "/usr/local/bin/build-xray.sh"]
+COPY xray.sh /usr/local/bin/xray.sh
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/xray.sh"]

@@ -2,7 +2,9 @@
 # Выключить VLESS: off (или sh ~/off.sh). Пароль не нужен, если работает сторож.
 D=$HOME/xray-tun
 RUN=/run/aurora-xray-tun
+# Без файла on сторож выключает туннель.
 rm -f "$D/on"
+# Есть сторож: ждём его. Сторожа нет, а Xray работает: останавливаем сами (нужен root).
 if [ -f $RUN.watch ] && [ -d "/proc/$(cat $RUN.watch)" ]; then
     i=0
     while [ $i -lt 10 ]; do

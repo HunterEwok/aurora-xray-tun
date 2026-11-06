@@ -11,6 +11,8 @@
 # скачивается из последнего релиза на GitHub; SHA-256 сверяется всегда.
 set -eu
 cd "$(dirname "$0")"
+# Настройки: адрес телефона (второй аргумент), имя пакета (как в build.sh), репозиторий
+# с релизами и папка на телефоне (~/xray-tun). Голый IP дополняется пользователем.
 PHONE=${2:-192.168.2.15}
 case $PHONE in *@*) ;; *.*.*.*) PHONE=defaultuser@$PHONE ;; esac
 APP_ID=${APP_ID:-io.github.hunterewok.XrayTun}
@@ -20,6 +22,8 @@ DIR=xray-tun
 SSH_OPTS="-o ControlMaster=auto -o ControlPath=${TMPDIR:-/tmp}/aurora-xray-tun-%r@%h -o ControlPersist=120"
 
 die() { echo "setup.sh: $*" >&2; exit 1; }
+# on_phone: команда на телефоне; as_root: vless.sh <команда> от root через devel-su
+# (-t нужен, чтобы devel-su мог спросить пароль).
 on_phone() { ssh $SSH_OPTS "$PHONE" "$@"; }
 as_root() { ssh -t $SSH_OPTS "$PHONE" "devel-su sh \$HOME/$DIR/vless.sh $1"; }
 sha256() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
@@ -51,6 +55,8 @@ package() {
     echo rpm/xray-tun.$arch.rpm
 }
 
+# Установка или замена ссылки: конфиг из ссылки, файлы на телефон, пакет через
+# установщик Авроры, запуск сторожа и туннеля, проверка внешнего адреса.
 install() {
     command -v python3 >/dev/null || die "не установлен python3"
     # Конфиг с вашим UUID живёт только во временной папке и на телефоне.
@@ -83,6 +89,7 @@ install() {
     echo "На телефоне в Терминале: on — включить, off — выключить."
 }
 
+# Удаление всего, что поставил install.
 remove() {
     # Пароль root нужен, только если работает сторож или туннель.
     if alive watch || alive pid; then as_root unwatch; fi

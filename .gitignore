@@ -2,3 +2,4 @@
 /src/
 /cache/
 /keys/*.pem
+__pycache__/

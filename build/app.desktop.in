@@ -1,5 +1,5 @@
 # Значок скрыт (NoDisplay): это не приложение, а программа для vless.sh. Без .desktop
-# и значков проверка пакетов Авроры (rpm-validator) пакет не пропускает.
+# и значков установщик Авроры пакет не принимает (BadPackage).
 [Desktop Entry]
 Type=Application
 X-Nemo-Application-Type=silica-qt5

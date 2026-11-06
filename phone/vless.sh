@@ -11,12 +11,18 @@
 # Собственное соединение Xray с сервером идёт мимо туннеля, маршрутом /32 через шлюз
 # Wi-Fi или мобильной сети: без него трафик Xray уходил бы обратно в TUN по кругу.
 # Адрес сервера берётся из публичного DNS через HTTPS и прописывается в конфиг.
+# Пути: конфиг и файл-флаг лежат рядом со скриптом (~/xray-tun), служебные файлы
+# работающего туннеля — в /run (очищается при перезагрузке):
+#   .pid  PID Xray, .ip  адрес сервера, .gw  шлюз и интерфейс, .json  конфиг с адресом,
+#   .log  журнал Xray, .watch  PID сторожа, .state  on/off для on.sh и off.sh,
+#   .watch.log  журнал сторожа. BIN заменяет setup.sh на путь из своего APP_ID.
 D=$(cd "$(dirname "$0")" && pwd)
 CONF=$D/xray.json
 FLAG=$D/on
 RUN=/run/aurora-xray-tun
 BIN=/usr/bin/io.github.hunterewok.XrayTun
 
+# Имя сервера из конфига (первое поле "address").
 server() { sed -n 's/.*"address": "\([^"]*\)".*/\1/p' "$CONF" | head -1; }
 resolve() { # имя → IPv4: DoH Cloudflare, потом Google, потом системный DNS
     case $1 in *[!0-9.]*) ;; *) echo "$1"; return ;; esac
@@ -27,11 +33,15 @@ resolve() { # имя → IPv4: DoH Cloudflare, потом Google, потом с�
     done
     getent ahostsv4 "$1" 2>/dev/null | awk 'NR==1{print $1}'
 }
+# alive <файл с PID>: жив ли процесс; running: работает ли Xray.
 alive() { [ -f "$1" ] && [ -d "/proc/$(cat "$1")" ]; }
 running() { alive $RUN.pid; }
+# Шлюз и интерфейс маршрута по умолчанию (Wi-Fi или мобильная сеть): "адрес интерфейс".
 gateway() { ip route show default | sed -n 's/^default via \([0-9.]*\) dev \([^ ]*\).*/\1 \2/p' | head -1; }
 need_root() { [ "$(id -u)" = 0 ] || { echo "нужен root: devel-su sh $0 $1"; exit 1; }; }
 
+# Запуск: узнать адрес сервера, проложить к нему маршрут /32 мимо туннеля, подставить
+# адрес в конфиг (dns.hosts) и запустить Xray. Xray сам поднимает xtun0 и маршруты.
 do_start() {
     [ -x $BIN ] || { echo "пакет не установлен: нет $BIN"; return 1; }
     running && { echo "уже запущен"; return 0; }
@@ -50,6 +60,7 @@ do_start() {
     if running; then echo "запущен: $H = $IP через $1 ($2)"
     else echo "Xray завершился:"; tail -20 $RUN.log; do_stop >/dev/null; return 1; fi
 }
+# Остановка: Xray при выходе сам убирает xtun0; маршрут /32 убираем мы.
 do_stop() {
     [ -f $RUN.pid ] && kill "$(cat $RUN.pid)" 2>/dev/null
     [ -f $RUN.ip ] && ip route del "$(cat $RUN.ip)/32" 2>/dev/null
@@ -81,6 +92,8 @@ watch_loop() { # раз в 3 секунды сверяет туннель с ф�
     done
 }
 
+# Команды. watch запускает сторожа в фоне (setsid отвязывает его от SSH и терминала),
+# unwatch останавливает сторожа и туннель.
 case "$1" in
 start) need_root start; do_start ;;
 stop) need_root stop; do_stop ;;
