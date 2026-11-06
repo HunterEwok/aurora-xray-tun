@@ -1,0 +1,53 @@
+# Релиз: на тег v* собирает подписанные пакеты Xray для armv7hl и aarch64 и выкладывает
+# их в GitHub Releases вместе с SHA256SUMS. phone.sh install скачивает их оттуда.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Тестовые ключи ОМП публичные. Если сайт ОМП не отдаёт их раннеру, их можно
+      # положить в секреты репозитория AURORA_REGULAR_KEY и AURORA_REGULAR_CERT
+      # (содержимое .pem): тогда build.sh их не скачивает.
+      - name: Signing keys from secrets
+        env:
+          KEY: ${{ secrets.AURORA_REGULAR_KEY }}
+          CERT: ${{ secrets.AURORA_REGULAR_CERT }}
+        run: |
+          mkdir -p keys
+          if [ -n "$KEY" ] && [ -n "$CERT" ]; then
+            printf '%s\n' "$KEY" > keys/regular_key.pem
+            printf '%s\n' "$CERT" > keys/regular_cert.pem
+          fi
+
+      - name: Build
+        run: ARCH=all ./build.sh
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist kit/aurora-xray-tun/rpm
+          for a in armv7hl aarch64; do cp out/*.$a.rpm dist/xray-tun.$a.rpm; done
+          (cd dist && sha256sum xray-tun.*.rpm > SHA256SUMS)
+          # Архив для тех, кто не клонирует репозиторий: скрипты и сразу оба пакета.
+          cp -r README.md config.sh phone.sh vless2xray.py phone kit/aurora-xray-tun/
+          cp dist/xray-tun.*.rpm dist/SHA256SUMS kit/aurora-xray-tun/rpm/
+          tar -C kit -czf dist/aurora-xray-tun.tar.gz aurora-xray-tun
+          (cd dist && sha256sum xray-tun.*.rpm aurora-xray-tun.tar.gz > SHA256SUMS)
+          tag=${GITHUB_REF_NAME}
+          [ "$GITHUB_REF_TYPE" = tag ] || tag=build-$(date -u +%Y%m%d-%H%M)
+          xray=$(sed -n 's/^XRAY_VERSION=${XRAY_VERSION:-\(v[^}]*\)}/\1/p' build.sh)
+          notes="Xray-core $xray для ОС Аврора (armv7hl и aarch64), подписан публичным тестовым ключом ОМП. Ставится только в режиме разработчика. Установка: см. README."
+          gh release create "$tag" dist/* --title "$tag" --notes "$notes"
