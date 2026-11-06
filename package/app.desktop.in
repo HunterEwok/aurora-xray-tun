@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=@APP@
+Exec=/usr/bin/@APP@
+Name=VLESS
+
+[X-Application]
+Permissions=Internet
+OrganizationName=@ORG@
+ApplicationName=@NAME@
