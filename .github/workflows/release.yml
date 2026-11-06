@@ -1,5 +1,5 @@
 # Релиз: на тег v* собирает подписанные пакеты Xray для armv7hl и aarch64 и выкладывает
-# их в GitHub Releases вместе с SHA256SUMS. phone.sh install скачивает их оттуда.
+# их в GitHub Releases вместе с SHA256SUMS. setup.sh скачивает их оттуда.
 name: release
 
 on:
@@ -42,7 +42,7 @@ jobs:
           for a in armv7hl aarch64; do cp out/*.$a.rpm dist/xray-tun.$a.rpm; done
           (cd dist && sha256sum xray-tun.*.rpm > SHA256SUMS)
           # Архив для тех, кто не клонирует репозиторий: скрипты и сразу оба пакета.
-          cp -r README.md config.sh phone.sh vless2xray.py phone kit/aurora-xray-tun/
+          cp -r README.md setup.sh vless2xray.py phone kit/aurora-xray-tun/
           cp dist/xray-tun.*.rpm dist/SHA256SUMS kit/aurora-xray-tun/rpm/
           tar -C kit -czf dist/aurora-xray-tun.tar.gz aurora-xray-tun
           (cd dist && sha256sum xray-tun.*.rpm aurora-xray-tun.tar.gz > SHA256SUMS)
