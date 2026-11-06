@@ -29,8 +29,9 @@ die() { echo "setup.sh: $*" >&2; exit 1; }
 on_phone() { ssh $SSH_OPTS "$PHONE" "$@"; }
 as_root() { ssh -t $SSH_OPTS "$PHONE" "devel-su sh \$HOME/$DIR/vless.sh $1"; }
 sha256() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
-apm() { # ru.omp.APM.Install / Remove: установщик пакетов Авроры
-    on_phone "gdbus call --system --dest ru.omp.APM --object-path /ru/omp/APM --method ru.omp.APM.$1 \"$2\" '{}'"
+apm() { # установщик пакетов Авроры: apm Install <файл> | Remove <пакет> | GetPackage <пакет>
+    case $1 in GetPackage) opts= ;; *) opts=" '{}'" ;; esac
+    on_phone "gdbus call --system --dest ru.omp.APM --object-path /ru/omp/APM --method ru.omp.APM.$1 \"$2\"$opts"
 }
 
 alive() { # работает ли на телефоне сторож (watch) или Xray (pid)
@@ -77,9 +78,24 @@ install() {
     on_phone "grep -q '# aurora-xray-tun' ~/.bashrc 2>/dev/null || printf '%s\\n' \
         '# aurora-xray-tun: on / off включают и выключают VLESS' \
         'alias on=\"sh ~/on.sh\"' 'alias off=\"sh ~/off.sh\"' >> ~/.bashrc"
-    echo "ставлю пакет"
-    apm Install "\$HOME/$DIR/$(basename "$rpm")" >/dev/null
-    sleep 5
+    # Установщик Авроры не ставит пакет поверх той же или более новой версии
+    # (DowngradeAttempt), а пакет с другой подписью не обновляет. Поэтому: та же версия
+    # уже стоит — ничего не ставим; стоит другая — сначала удаляем её.
+    f=\$HOME/$DIR/$(basename "$rpm")
+    want=$(on_phone "rpm -qp --qf '%{VERSION}-%{RELEASE}' $f")
+    # Версию установленного спрашиваем у самого установщика: rpm -q от пользователя
+    # пакетов, поставленных через APM, не видит.
+    have=$(apm GetPackage "$APP_ID" 2>/dev/null | sed -n "s/.*'general.version': '\([^']*\)'.*/\1/p" || true)
+    if [ "$have" = "$want" ]; then
+        echo "пакет $APP_ID $want уже установлен"
+    else
+        if [ -n "$have" ]; then
+            echo "удаляю пакет $APP_ID $have"; apm Remove "$APP_ID" >/dev/null; sleep 3
+        fi
+        echo "ставлю пакет $APP_ID $want"
+        apm Install "$f" >/dev/null
+        sleep 5
+    fi
     # Сторож работает от root: пароль root спрашивается здесь, дальше on и off без него.
     # Если сторож уже работает (замена ссылки), он подхватит новый конфиг при перезапуске.
     on_phone "touch $DIR/on"
