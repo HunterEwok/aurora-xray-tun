@@ -37,17 +37,53 @@ cd aurora-xray-tun
 - DNS-запросы приложений Xray перехватывает и отправляет через сервер (DoH 1.1.1.1 и
   8.8.8.8). Локальные сети (192.168.x.x и другие) ходят напрямую.
 
-## Что нужно
+## Требования
 
-На компьютере (Mac или Linux): `python3`, `ssh`, `curl`. Docker нужен, только если
-собирать пакет самому (см. «Собрать самому»).
+### Компьютер
 
-На телефоне:
+Нужны `python3`, `ssh` и `curl`. Docker нужен, только если собирать пакет самому
+(см. «Собрать самому»).
+
+**macOS.** `ssh` и `curl` уже есть. `python3` ставится вместе с инструментами командной
+строки Apple:
+
+```sh
+xcode-select --install
+```
+
+Docker (только для сборки): [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+или `brew install --cask docker`.
+
+**Linux.** Debian, Ubuntu, Mint:
+
+```sh
+sudo apt install python3 openssh-client curl
+```
+
+Fedora: `sudo dnf install python3 openssh-clients curl`. Arch: `sudo pacman -S python openssh curl`.
+Docker (только для сборки): `curl -fsSL https://get.docker.com | sh`.
+
+**Windows.** Скрипты написаны для `sh`, поэтому запускайте их в WSL (Linux внутри
+Windows). Один раз в PowerShell от имени администратора:
+
+```powershell
+wsl --install
+```
+
+После перезагрузки откройте «Ubuntu» из меню «Пуск» и в нём выполните команду для
+Debian и Ubuntu выше. Дальше все команды из этого README вводятся в окне Ubuntu.
+Телефон удобнее подключать по Wi-Fi. Docker (только для сборки): Docker Desktop с
+включённой интеграцией WSL. На Windows набор пока не проверялся.
+
+### Телефон
+
 - Включённый режим разработчика: «Настройки → Для разработчиков», там же включить
   удалённое подключение (SSH) и задать пароль. Этот же пароль спрашивает `devel-su`.
 - Подключение к компьютеру по USB (телефон будет на `192.168.2.15`) или по Wi-Fi.
 
-Сервер: любой сервер VLESS и ссылка `vless://` от него. Поддерживаются:
+### Сервер
+
+Любой сервер VLESS и ссылка `vless://` от него. Поддерживаются:
 - `security`: `none`, `tls`, `reality`;
 - `type`: `tcp` (`raw`), `ws`, `grpc`, `httpupgrade`, `xhttp`;
 - `flow=xtls-rprx-vision`, шифрование VLESS (`encryption=`), `pqv` для REALITY,
