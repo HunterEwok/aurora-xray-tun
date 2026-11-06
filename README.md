@@ -8,8 +8,8 @@ Xray-core с TUN по вашей ссылке `vless://`, вторая удал�
 ```sh
 curl -L https://github.com/HunterEwok/aurora-xray-tun/releases/latest/download/aurora-xray-tun.tar.gz | tar xz
 cd aurora-xray-tun
-./setup.sh 'vless://UUID@ваш.сервер:443?...#vps'    # поставить
-./setup.sh remove                                  # удалить
+./setup.sh 'vless://UUID@ваш.сервер:443?...#vps' 192.168.1.50    # поставить
+./setup.sh remove 192.168.1.50                                  # удалить
 ```
 
 Проверено на F+ R570E с Авророй 5.1.5.105 (32-битный armv7hl). В Авроре 5.2 общий тестовый
@@ -55,13 +55,18 @@ cd aurora-xray-tun
 
 ## Установка
 
-Подключите телефон к компьютеру по USB (или по Wi-Fi, см. ниже) и выполните:
+Телефон должен быть в той же сети Wi-Fi, что и компьютер (или подключён по USB).
+Его адрес можно посмотреть в сведениях о сети Wi-Fi на телефоне или в списке устройств
+роутера. Выполните:
 
 ```sh
 curl -L https://github.com/HunterEwok/aurora-xray-tun/releases/latest/download/aurora-xray-tun.tar.gz | tar xz
 cd aurora-xray-tun
-./setup.sh 'vless://UUID@ваш.сервер:443?type=tcp&security=reality&pbk=...&sid=...&sni=...&flow=xtls-rprx-vision#vps'
+./setup.sh 'vless://UUID@ваш.сервер:443?type=tcp&security=reality&pbk=...&sid=...&sni=...&flow=xtls-rprx-vision#vps' 192.168.1.50
 ```
+
+Последний параметр — адрес телефона. Без него скрипт идёт на `192.168.2.15`: такой
+адрес у телефона, подключённого по USB.
 
 Ссылку берите в одинарные кавычки: в ней есть `&` и `#`. В архиве скрипты и готовые
 подписанные пакеты Xray-core для обеих архитектур (`rpm/`, суммы в `rpm/SHA256SUMS`).
@@ -75,12 +80,11 @@ cd aurora-xray-tun
 
 SSH спросит пароль `defaultuser`, а `devel-su` — пароль root (тот же пароль из режима
 разработчика); пароль root нужен только здесь. Чтобы не вводить пароль SSH, можно один
-раз выполнить `ssh-copy-id defaultuser@192.168.2.15`. Конфиг с вашим UUID остаётся
+раз выполнить `ssh-copy-id defaultuser@<адрес телефона>`. Конфиг с вашим UUID остаётся
 только на телефоне.
 
 | Переменная | Значение |
 |---|---|
-| `PHONE=defaultuser@192.168.1.50` | телефон по Wi-Fi (по умолчанию `192.168.2.15`, это USB) |
 | `IPV6=1` | заворачивать в туннель и IPv6 (на телефоне пока не проверялось) |
 
 Поменялась ссылка: просто запустите `./setup.sh` с новой.
@@ -135,7 +139,7 @@ ARCH=aarch64 ./build.sh    # для 64-битных телефонов, ARCH=all
 | `APP_ID=...` | другое имя пакета (тогда и `APP_ID=... ./setup.sh ...`) |
 | `XRAY_VERSION=v...` | другая версия Xray-core (тег из github.com/XTLS/Xray-core) |
 
-Архитектуру телефона можно узнать так: `ssh defaultuser@192.168.2.15 rpm -q --qf '%{ARCH}\n' glibc`.
+Архитектуру телефона можно узнать так: `ssh defaultuser@<адрес телефона> rpm -q --qf '%{ARCH}\n' glibc`.
 У R570E ядро 64-битное, но система 32-битная, поэтому там `armv7hl`.
 
 ## Новый релиз
@@ -159,7 +163,7 @@ ARCH=aarch64 ./build.sh    # для 64-битных телефонов, ARCH=all
 ## Удаление
 
 ```sh
-./setup.sh remove
+./setup.sh remove 192.168.1.50
 ```
 
 Останавливает сторожа и туннель (тогда спросит пароль root), удаляет пакет через

@@ -1,16 +1,18 @@
 #!/bin/sh
 # VLESS на телефоне с ОС Аврора, одной командой с компьютера.
 #
-#   ./setup.sh 'vless://UUID@host:port?...#имя'   поставить (или заменить ссылку)
-#   ./setup.sh remove                             удалить всё с телефона
+#   ./setup.sh 'vless://UUID@host:port?...#имя' [адрес телефона]   поставить или заменить ссылку
+#   ./setup.sh remove [адрес телефона]                             удалить всё с телефона
 #
-# Телефон: PHONE=defaultuser@адрес (по умолчанию defaultuser@192.168.2.15, это USB).
+# Адрес телефона: IP в Wi-Fi (например 192.168.1.50) или имя из ~/.ssh/config. Без него
+# берётся 192.168.2.15: так телефон виден по USB. Пользователь по умолчанию defaultuser.
 # IPV6=1 заворачивает в туннель и IPv6. Пароль root (devel-su) спрашивается один раз.
 # Пакет с Xray берётся собранный ./build.sh из out/, из архива релиза (rpm/) или
 # скачивается из последнего релиза на GitHub; SHA-256 сверяется всегда.
 set -eu
 cd "$(dirname "$0")"
-PHONE=${PHONE:-defaultuser@192.168.2.15}
+PHONE=${2:-192.168.2.15}
+case $PHONE in *@*) ;; *.*.*.*) PHONE=defaultuser@$PHONE ;; esac
 APP_ID=${APP_ID:-io.github.hunterewok.XrayTun}
 REPO=${REPO:-HunterEwok/aurora-xray-tun}
 DIR=xray-tun
@@ -95,5 +97,5 @@ remove() {
 case "${1:-}" in
 vless://*) install "$1" ;;
 remove) remove ;;
-*) echo "запуск: ./setup.sh 'vless://...'   или   ./setup.sh remove"; exit 2 ;;
+*) echo "запуск: ./setup.sh 'vless://...' [адрес телефона]   или   ./setup.sh remove [адрес телефона]"; exit 2 ;;
 esac
