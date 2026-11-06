@@ -20,7 +20,7 @@ D=$(cd "$(dirname "$0")" && pwd)
 CONF=$D/xray.json
 FLAG=$D/on
 RUN=/run/aurora-xray-tun
-BIN=/usr/bin/io.github.hunterewok.XrayTun
+BIN=/usr/bin/local.xraytun.XrayTun
 
 # Имя сервера из конфига (первое поле "address").
 server() { sed -n 's/.*"address": "\([^"]*\)".*/\1/p' "$CONF" | head -1; }

@@ -3,7 +3,7 @@
 # Aurora Platform SDK (там есть rpmbuild, rpmsign-external и rpm-validator).
 #
 # Запуск: package.sh <имя пакета> <версия> <архитектура>
-#   имя пакета   например io.github.hunterewok.XrayTun; так же называется программа
+#   имя пакета   например local.xraytun.XrayTun; так же называется программа
 #   версия       версия Xray без «v», например 26.10.31
 #   архитектура  armv7hl или aarch64
 # Берёт:  /work/src/<имя пакета>            программу, собранную build/xray.sh

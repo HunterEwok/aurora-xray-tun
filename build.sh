@@ -8,14 +8,14 @@
 # Запуск: ./build.sh
 # Настройки (переменные окружения):
 #   ARCH=armv7hl|aarch64|all   архитектура телефона (по умолчанию armv7hl)
-#   APP_ID=...                 имя пакета (по умолчанию io.github.hunterewok.XrayTun)
+#   APP_ID=...                 имя пакета (по умолчанию local.xraytun.XrayTun)
 #   XRAY_VERSION=v...          тег Xray-core
 # Нужен Docker. Тестовые ключи подписи скачиваются сами (см. README, «Ключи подписи»).
 set -eu
 cd "$(dirname "$0")"
 
 ARCH=${ARCH:-armv7hl}
-APP_ID=${APP_ID:-io.github.hunterewok.XrayTun}
+APP_ID=${APP_ID:-local.xraytun.XrayTun}
 XRAY_VERSION=${XRAY_VERSION:-v26.10.31}
 PSDK_VERSION=5.1.5.105
 PSDK_IMAGE=aurora-psdk:$PSDK_VERSION

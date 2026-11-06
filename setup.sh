@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 # с релизами и папка на телефоне (~/xray-tun). Голый IP дополняется пользователем.
 PHONE=${2:-192.168.2.15}
 case $PHONE in *@*) ;; *.*.*.*) PHONE=defaultuser@$PHONE ;; esac
-APP_ID=${APP_ID:-io.github.hunterewok.XrayTun}
+APP_ID=${APP_ID:-local.xraytun.XrayTun}
 REPO=${REPO:-HunterEwok/aurora-xray-tun}
 DIR=xray-tun
 # Одно SSH-соединение на все команды: пароль SSH спрашивается один раз.
