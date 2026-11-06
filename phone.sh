@@ -30,6 +30,8 @@ install)
     [ -n "$rpm" ] || die "нет out/*.rpm: сначала ./build.sh 'vless://...'"
     on_phone "mkdir -p $DIR"
     scp $SSH_OPTS "$rpm" out/xray.json out/vless.sh "$PHONE:$DIR/"
+    # Короткие on.sh и off.sh кладутся прямо в домашнюю папку.
+    scp $SSH_OPTS phone/on.sh phone/off.sh "$PHONE:"
     echo "ставлю пакет $(basename "$rpm")"
     on_phone "gdbus call --system --dest ru.omp.APM --object-path /ru/omp/APM \
         --method ru.omp.APM.Install \"\$HOME/$DIR/$(basename "$rpm")\" '{}'"
