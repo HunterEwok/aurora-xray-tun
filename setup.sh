@@ -18,8 +18,10 @@ case $PHONE in *@*) ;; *.*.*.*) PHONE=defaultuser@$PHONE ;; esac
 APP_ID=${APP_ID:-local.xraytun.XrayTun}
 REPO=${REPO:-HunterEwok/aurora-xray-tun}
 DIR=xray-tun
-# Одно SSH-соединение на все команды: пароль SSH спрашивается один раз.
-SSH_OPTS="-o ControlMaster=auto -o ControlPath=${TMPDIR:-/tmp}/aurora-xray-tun-%r@%h -o ControlPersist=120"
+# Одно SSH-соединение на все команды: пароль SSH спрашивается один раз. Сокет лежит
+# в /tmp с коротким именем (%C — хэш адреса): путь к сокету не может быть длиннее
+# ~100 символов, а $TMPDIR на Маке для этого слишком длинный.
+SSH_OPTS="-o ControlMaster=auto -o ControlPath=/tmp/axt-%C -o ControlPersist=120"
 
 die() { echo "setup.sh: $*" >&2; exit 1; }
 # on_phone: команда на телефоне; as_root: vless.sh <команда> от root через devel-su
